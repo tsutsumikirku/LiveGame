@@ -14,7 +14,7 @@ public class CSVInpoerter : MonoBehaviour
         string csvData = _textAsset.text;
         string[] rows = csvData.Split('\n');
         chatData = new CommentData[rows.Length];
-        for (int i = 0; i < rows.Length; i++)
+        for (int i = 1; i < rows.Length; i++)
         {
             string[] columns = rows[i].Split(',');
             chatData[i].CommentType = columns[0];
@@ -23,6 +23,9 @@ public class CSVInpoerter : MonoBehaviour
             chatData[i].Responce = columns[3];
             chatData[i].Damage = int.Parse(columns[4]);
             chatData[i].Popularity = int.Parse(columns[5]);
+            chatData[i].topic = columns[6];
+            chatData[i].emotion = columns[7];
+            chatData[i].money = int.Parse(columns[8]);
         }
     }
 
@@ -58,6 +61,15 @@ public class CommentData
     
     // 人気度
     public int Popularity;
+    
+    // 話題
+    public string topic;
+
+    // 感情
+    public string emotion;
+
+    //スパチャ額
+    public int money;
 }
 
 
