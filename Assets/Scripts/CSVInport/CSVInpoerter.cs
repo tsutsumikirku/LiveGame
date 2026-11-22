@@ -267,6 +267,18 @@ public class CSVInpoerter : MonoBehaviour
 
         return selected;
     }
+    public CommentData[] GetCommentID(int commentID)
+    {
+        List<CommentData> results = new List<CommentData>();
+        foreach (CommentData data in chatData)
+        {
+            if (data.id == commentID)
+            {
+                results.Add(data);
+            }
+        }
+        return results.ToArray();
+    }
 }
 /// <summary>
 /// チャットのデータを格納するためのクラス

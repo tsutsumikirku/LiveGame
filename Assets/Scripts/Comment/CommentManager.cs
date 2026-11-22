@@ -1,10 +1,18 @@
 using System;
 using System.Collections.Generic;
+using DG.Tweening;
 using TMPro;
 using UnityEngine;
 
 public class CommentManager : MonoBehaviour
 {
+    private enum StreamState
+    {
+        Ready,
+        Running,
+        Ended
+    }
+
     [SerializeField, InspectorName("コメントのプレハブ")]
     private Comment commentPrefab;
     [SerializeField, InspectorName("コメントの生成先"), Tooltip("生成したコメントを配置する Canvas 内の親オブジェクト。")]
@@ -24,7 +32,7 @@ public class CommentManager : MonoBehaviour
     [SerializeField, InspectorName("消滅演出の時間（秒）"), Min(0f)]
     private float deleteTime = 0.25f;
 
-    [SerializeField, InspectorName("コメントを自動生成する")]
+    [SerializeField, InspectorName("シーン開始時にコメントを流す"), Tooltip("オフにすると StartComments を呼ぶまで自動生成を待ちます。")]
     private bool autoSpawn = true;
     [SerializeField, InspectorName("現在の好感度"), Tooltip("出現するコメントの抽選に使う値。反応したコメントの好感度ポイントが加算されます。")]
     private int currentPopularity;
@@ -50,6 +58,9 @@ public class CommentManager : MonoBehaviour
     private float spawnClearanceWidth = 320f;
 
     private readonly List<Comment> visibleComments = new List<Comment>();
+    private readonly List<Comment> spawnedComments = new List<Comment>();
+    private StreamState streamState;
+    private int? initialPopularity;
     private float nextCommonSpawnTime;
     private float nextEarlyStageSpawnTime;
     private float? earlyStageEndTime;
@@ -57,14 +68,67 @@ public class CommentManager : MonoBehaviour
     private float topicEndTime;
     private float nextTopicSpawnTime;
 
-    private void OnEnable()
+    private void Awake()
     {
+        initialPopularity = currentPopularity;
+    }
+
+    private void Start()
+    {
+        if (autoSpawn && streamState == StreamState.Ready)
+        {
+            StartComments();
+        }
+    }
+
+    /// <summary>
+    /// コメントの自動生成を開始します。
+    /// </summary>
+    public void StartComments()
+    {
+        if (streamState == StreamState.Running)
+        {
+            return;
+        }
+
+        streamState = StreamState.Running;
         nextCommonSpawnTime = GetNextSpawnTime(Time.time);
+    }
+
+    /// <summary>
+    /// コメントの生成を止め、生成済みのコメントと配信中の状態をリセットします。
+    /// </summary>
+    public void EndComments()
+    {
+        streamState = StreamState.Ended;
+        nextCommonSpawnTime = 0f;
+        nextEarlyStageSpawnTime = 0f;
+        earlyStageEndTime = null;
+        activeTopic = null;
+        topicEndTime = 0f;
+        nextTopicSpawnTime = 0f;
+        currentPopularity = initialPopularity ?? currentPopularity;
+
+        foreach (Comment comment in spawnedComments)
+        {
+            if (comment == null)
+            {
+                continue;
+            }
+
+            // 消滅演出を完了させずに止め、終了時にスコア処理が走らないようにする。
+            comment.transform.DOKill();
+            comment.gameObject.SetActive(false);
+            Destroy(comment.gameObject);
+        }
+
+        spawnedComments.Clear();
+        visibleComments.Clear();
     }
 
     private void Update()
     {
-        if (!autoSpawn)
+        if (streamState != StreamState.Running)
         {
             return;
         }
@@ -99,6 +163,15 @@ public class CommentManager : MonoBehaviour
     {
         currentPopularity += data.Popularity;
 
+        CSVInpoerter importer = CSVInpoerter.Instance;
+        if (data.reactionId > 0 && importer != null)
+        {
+            foreach (CommentData reaction in importer.GetCommentID(data.reactionId))
+            {
+                SpawnComment(reaction, null, automatic: true, allowOverlapWhenFull: true);
+            }
+        }
+
         if (topicDuration <= 0f || string.IsNullOrWhiteSpace(data.topic))
         {
             return;
@@ -115,7 +188,7 @@ public class CommentManager : MonoBehaviour
         topicEndTime = now + topicDuration;
     }
 
-    private bool TryGetSpawnPosition(Comment comment, bool automatic, out Vector2 position)
+    private bool TryGetSpawnPosition(Comment comment, bool automatic, bool allowOverlapWhenFull, out Vector2 position)
     {
         Rect area = commentParent.rect;
         float xPadding = Mathf.Clamp(horizontalPadding, 0f, area.width * 0.25f);
@@ -178,7 +251,8 @@ public class CommentManager : MonoBehaviour
                 ? (minY + maxY) * 0.5f
                 : Mathf.Lerp(minY, maxY, (float)lane / (laneCount - 1));
 
-            if (!IsSpawnPositionOccupied(comment, x, y, spacing))
+            if (!IsSpawnPositionOccupied(comment, x, y, spacing) ||
+                (allowOverlapWhenFull && offset == laneCount - 1))
             {
                 position = new Vector2(x, y);
                 return true;
@@ -241,6 +315,11 @@ public class CommentManager : MonoBehaviour
 
     private Comment SpawnComment(string commentType, Action<CommentData> onVanish, bool automatic)
     {
+        if (streamState == StreamState.Ended)
+        {
+            return null;
+        }
+
         CSVInpoerter importer = CSVInpoerter.Instance;
         if (importer == null)
         {
@@ -249,6 +328,12 @@ public class CommentManager : MonoBehaviour
         }
 
         CommentData data = importer.GetCommentType(commentType, currentPopularity);
+        return SpawnComment(data, onVanish, automatic);
+    }
+
+    private Comment SpawnComment(CommentData data, Action<CommentData> onVanish, bool automatic,
+        bool allowOverlapWhenFull = false)
+    {
         if (data == null)
         {
             return null;
@@ -274,7 +359,7 @@ public class CommentManager : MonoBehaviour
 
         if (automatic || spawnPoint != null || spawnOutsideRight)
         {
-            if (!TryGetSpawnPosition(comment, automatic, out Vector2 position))
+            if (!TryGetSpawnPosition(comment, automatic, allowOverlapWhenFull, out Vector2 position))
             {
                 Destroy(comment.gameObject);
                 return null;
@@ -282,6 +367,8 @@ public class CommentManager : MonoBehaviour
 
             commentRect.localPosition = new Vector3(position.x, position.y, commentRect.localPosition.z);
         }
+        spawnedComments.RemoveAll(previous => previous == null);
+        spawnedComments.Add(comment);
         return comment;
     }
 }

@@ -33,6 +33,7 @@ public class Response : MonoBehaviour
         ((RectTransform)transform).localScale = Vector2.zero;
         tween?.Kill();
         tween = ((RectTransform)transform).DOScale(defaultSize,sizeTime);
+        responseText.text = "";
         foreach (char c in text)
         {
             responseText.text += c;

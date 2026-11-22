@@ -157,6 +157,7 @@ public class Comment : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragH
                 tween = transform.DOScale(Vector2.zero, deleteTime).OnComplete(() =>
                 {
                     vanishAction(commentData);
+                    GameManager.Instance.GetComment(commentData);
                     Destroy(this.gameObject);
                 });
             }
