@@ -20,6 +20,7 @@ public class Comment : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragH
     [SerializeField, InspectorName("これ以下になったら衝突したことにします")]float hitDistance;
     // テキスト
     [SerializeField, InspectorName("コメントの文章を適用するテキスト")]TextMeshProUGUI Text;
+    [SerializeField] private Sprite[] SuperChatImage;
     
     // コメントの速度
     float commentSpeed;
@@ -71,13 +72,33 @@ public class Comment : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragH
             superChatText.gameObject.SetActive(true);
             superChatChatMoney.text = initCommentData.money.ToString();
             superChatText.text = initCommentData.Comment;
-            if(initCommentData.Popularity < 0)
+            if(initCommentData.Popularity < 1000)
             {
-                superChatText.color = Color.red;
+                superChatImage.sprite = SuperChatImage[0];
+            }
+            if(initCommentData.money < 5000)
+            {
+                superChatImage.sprite = SuperChatImage[1];
+            }
+            else if(initCommentData.money < 10000)
+            {
+                superChatImage.sprite = SuperChatImage[2];
+            }
+            else if(initCommentData.money < 20000)
+            {
+                superChatImage.sprite = SuperChatImage[3];
+            }
+            else if(initCommentData.money < 30000)
+            {
+                superChatImage.sprite = SuperChatImage[4];
+            }
+            else if(initCommentData.money < 50000)
+            {
+                superChatImage.sprite = SuperChatImage[5];
             }
             else
             {
-                superChatText.color = Color.white;
+                superChatImage.sprite = SuperChatImage[6];
             }
         }
         commentData = initCommentData;
