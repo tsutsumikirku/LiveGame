@@ -4,6 +4,7 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
     [SerializeField]private float gameTime = 180f;
+    public int likeability = 0;
     private float currentTime;
     private bool isGameRunning = false;
 
@@ -26,6 +27,7 @@ public class GameManager : MonoBehaviour
     }
     public void GameStart()
     {
+        likeability = 0;
         FindAnyObjectByType<CommentManager>().StartComments();
         isGameRunning = true;
         currentTime = gameTime;

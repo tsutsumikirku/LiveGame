@@ -242,11 +242,18 @@ public class CSVInpoerter : MonoBehaviour
     }
 
     /// <summary>
-    /// 現在の好感度で出現できるコメントを、指定された種類から重み付きで1件選びます。
+    /// GameManager の現在の好感度で出現できるコメントを、指定された種類から重み付きで1件選びます。
     /// </summary>
     /// <returns>対象がない場合や読み込み中は null。</returns>
-    public CommentData GetCommentType(string commentType, int currentPopularity)
+    public CommentData GetCommentType(string commentType)
     {
+        GameManager gameManager = GameManager.Instance;
+        if (gameManager == null)
+        {
+            return null;
+        }
+
+        int currentPopularity = gameManager.likeability;
         CommentData selected = null;
         long totalWeight = 0;
         foreach (CommentData data in chatData)
