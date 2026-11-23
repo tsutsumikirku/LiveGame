@@ -284,8 +284,8 @@ MonoBehaviour:
   superChatText: {fileID: 7927409366883100742}
   hitDistance: 1.69
   Text: {fileID: 7651848218704297810}
-  inertiaDamping: 0.92
-  inertiaStopSpeed: 10
+  inertiaDamping: 0.99
+  inertiaStopSpeed: 60
 --- !u!1 &7827352512820320859
 GameObject:
   m_ObjectHideFlags: 0
