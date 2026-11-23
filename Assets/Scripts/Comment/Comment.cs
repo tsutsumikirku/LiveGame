@@ -53,7 +53,7 @@ public class Comment : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragH
     public void Init(CommentData initCommentData, float initCommentSpeed, float initDeleteTime, 
     RectTransform initCharacterPosition, Action<CommentData> action)
     {
-        if(initCommentData.Damage > 0)
+        if(initCommentData.Popularity > 0)
         {
             Text.color = Color.red;
             commentState = CommentState.tracking;
@@ -71,7 +71,7 @@ public class Comment : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragH
             superChatText.gameObject.SetActive(true);
             superChatChatMoney.text = initCommentData.money.ToString();
             superChatText.text = initCommentData.Comment;
-            if(initCommentData.Damage > 0)
+            if(initCommentData.Popularity > 0)
             {
                 superChatText.color = Color.red;
             }
