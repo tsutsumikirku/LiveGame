@@ -7,7 +7,7 @@ public class GameManager : MonoBehaviour
     [SerializeField, InspectorName("好感度の最大値")]
     private UIManager uIManager;
     private Response response;
-    private int likeability;
+    [SerializeField]private int likeability;
     private int money = 0;
     public int Likeability
     {
