@@ -14,9 +14,13 @@ public class GameManager : MonoBehaviour
         get { return likeability; }
         set
         {
-            if (likeability + value > MaxLikeAbility)
+            if (likeability + value > maxLikeAbility)
             {
-                likeability = MaxLikeAbility;
+                likeability = maxLikeAbility;
+            }
+            else if(likeability + value < minLikeAbility)
+            {
+                likeability = minLikeAbility;
             }
             else
             {
@@ -25,7 +29,8 @@ public class GameManager : MonoBehaviour
             Debug.Log($"好感度が{likeability}に変更されました。");
         }
     }
-    public int MaxLikeAbility;
+    public int maxLikeAbility;
+    public int minLikeAbility;
     private float currentTime;
     private bool isGameRunning = false;
 
