@@ -1212,9 +1212,9 @@ RectTransform:
   - {fileID: 1143118273}
   - {fileID: 1661044689}
   - {fileID: 1559914497}
-  - {fileID: 2074696799}
   - {fileID: 432726611}
   - {fileID: 99613857}
+  - {fileID: 2074696799}
   - {fileID: 419743238}
   - {fileID: 223202660}
   m_Father: {fileID: 0}
@@ -1355,7 +1355,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Response
   sizeTime: 0.55
-  responseTime: 1
+  responseTime: 0.1
   responseText: {fileID: 900422691}
 --- !u!114 &1559914499
 MonoBehaviour:
