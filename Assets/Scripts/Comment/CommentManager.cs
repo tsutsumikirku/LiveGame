@@ -34,8 +34,6 @@ public class CommentManager : MonoBehaviour
 
     [SerializeField, InspectorName("シーン開始時にコメントを流す"), Tooltip("オフにすると StartComments を呼ぶまで自動生成を待ちます。")]
     private bool autoSpawn = true;
-    [SerializeField, InspectorName("現在の好感度"), Tooltip("出現するコメントの抽選に使う値。反応したコメントの好感度ポイントが加算されます。")]
-    private int currentPopularity;
     [SerializeField, InspectorName("序盤コメントを流す時間（秒）"), Tooltip("最初の Common コメントを生成してから EarlyStage を追加する時間。0 で序盤コメントを無効にします。"), Min(0f)]
     private float earlyStageDuration = 20f;
     [SerializeField, InspectorName("話題コメントを流す時間（秒）"), Tooltip("話題付きコメントの消滅後、その話題に一致するコメントを追加する時間。0 で無効にします。"), Min(0f)]
@@ -60,18 +58,13 @@ public class CommentManager : MonoBehaviour
     private readonly List<Comment> visibleComments = new List<Comment>();
     private readonly List<Comment> spawnedComments = new List<Comment>();
     private StreamState streamState;
-    private int? initialPopularity;
+    private int? initialLikeability;
     private float nextCommonSpawnTime;
     private float nextEarlyStageSpawnTime;
     private float? earlyStageEndTime;
     private string activeTopic;
     private float topicEndTime;
     private float nextTopicSpawnTime;
-
-    private void Awake()
-    {
-        initialPopularity = currentPopularity;
-    }
 
     private void Start()
     {
@@ -92,6 +85,12 @@ public class CommentManager : MonoBehaviour
         }
 
         streamState = StreamState.Running;
+        GameManager gameManager = GameManager.Instance;
+        if (gameManager != null)
+        {
+            initialLikeability ??= gameManager.likeability;
+        }
+
         nextCommonSpawnTime = GetNextSpawnTime(Time.time);
     }
 
@@ -107,7 +106,13 @@ public class CommentManager : MonoBehaviour
         activeTopic = null;
         topicEndTime = 0f;
         nextTopicSpawnTime = 0f;
-        currentPopularity = initialPopularity ?? currentPopularity;
+        GameManager gameManager = GameManager.Instance;
+        if (gameManager != null && initialLikeability.HasValue)
+        {
+            gameManager.likeability = initialLikeability.Value;
+        }
+
+        initialLikeability = null;
 
         foreach (Comment comment in spawnedComments)
         {
@@ -161,7 +166,12 @@ public class CommentManager : MonoBehaviour
 
     private void HandleCommentVanish(CommentData data)
     {
-        currentPopularity += data.Popularity;
+        GameManager gameManager = GameManager.Instance;
+        if (gameManager != null)
+        {
+            initialLikeability ??= gameManager.likeability;
+            gameManager.likeability += data.Popularity;
+        }
 
         CSVInpoerter importer = CSVInpoerter.Instance;
         if (data.reactionId > 0 && importer != null)
@@ -327,7 +337,7 @@ public class CommentManager : MonoBehaviour
             return null;
         }
 
-        CommentData data = importer.GetCommentType(commentType, currentPopularity);
+        CommentData data = importer.GetCommentType(commentType);
         return SpawnComment(data, onVanish, automatic);
     }
 
