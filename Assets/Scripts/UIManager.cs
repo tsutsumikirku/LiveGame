@@ -48,14 +48,6 @@ public class UIManager : MonoBehaviour
     }
     void Update()
     {
-        if(isBombActive)
-        {
-            
-        }
-        else
-        {
-            _timerText.color = Color.white;
-        }
     }
 
     public void UpdateMoney(int money)

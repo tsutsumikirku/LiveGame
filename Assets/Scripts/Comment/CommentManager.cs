@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class CommentManager : MonoBehaviour
 {
@@ -57,6 +58,7 @@ public class CommentManager : MonoBehaviour
 
     private readonly List<Comment> visibleComments = new List<Comment>();
     private readonly List<Comment> spawnedComments = new List<Comment>();
+    private readonly List<Graphic> commentGraphics = new List<Graphic>();
     private StreamState streamState;
     private int? initialLikeability;
     private float nextCommonSpawnTime;
@@ -201,27 +203,33 @@ public class CommentManager : MonoBehaviour
 
     private bool TryGetSpawnPosition(Comment comment, bool automatic, bool allowOverlapWhenFull, out Vector2 position)
     {
-        Rect area = commentParent.rect;
-        float xPadding = Mathf.Clamp(horizontalPadding, 0f, area.width * 0.25f);
-        float bottomPadding = Mathf.Clamp(verticalPadding, 0f, area.height * 0.25f);
-        float topPadding = Mathf.Min(bottomPadding + Mathf.Max(0f, extraTopPadding), area.height * 0.25f);
-        Vector2 availableSize = new Vector2(area.width - 2f * xPadding, area.height - topPadding - bottomPadding);
+        Rect parentArea = commentParent.rect;
+        Rect canvasArea = GetCanvasArea();
+        Rect area = Rect.MinMaxRect(
+            Mathf.Max(parentArea.xMin, canvasArea.xMin),
+            Mathf.Max(parentArea.yMin, canvasArea.yMin),
+            Mathf.Min(parentArea.xMax, canvasArea.xMax),
+            Mathf.Min(parentArea.yMax, canvasArea.yMax));
         position = default;
-        if (availableSize.x <= 0f || availableSize.y <= 0f)
+        if (area.width <= 0f || area.height <= 0f)
         {
             return false;
         }
 
-        Bounds textBounds = GetTextBounds(comment);
-        float fit = Mathf.Min(1f, availableSize.x / Mathf.Max(1f, textBounds.size.x));
-        fit = Mathf.Min(fit, availableSize.y / Mathf.Max(1f, textBounds.size.y));
+        float xPadding = Mathf.Clamp(horizontalPadding, 0f, area.width * 0.25f);
+        float bottomPadding = Mathf.Clamp(verticalPadding, 0f, area.height * 0.25f);
+        float topPadding = Mathf.Min(bottomPadding + Mathf.Max(0f, extraTopPadding), area.height * 0.25f);
+        Vector2 availableSize = new Vector2(area.width - 2f * xPadding, area.height - topPadding - bottomPadding);
+        Bounds displayBounds = GetDisplayBounds(comment);
+        float fit = Mathf.Min(1f, availableSize.x / Mathf.Max(1f, displayBounds.size.x));
+        fit = Mathf.Min(fit, availableSize.y / Mathf.Max(1f, displayBounds.size.y));
         comment.transform.localScale *= fit;
 
-        // 文字の表示範囲が生成先の内側に収まる座標を求める。
-        float minX = area.xMin + xPadding - textBounds.min.x * fit;
-        float maxX = Mathf.Max(minX, area.xMax - xPadding - textBounds.max.x * fit);
-        float minY = area.yMin + bottomPadding - textBounds.min.y * fit;
-        float maxY = Mathf.Max(minY, area.yMax - topPadding - textBounds.max.y * fit);
+        // 文字と背景の表示範囲が、余白を含めた生成範囲内に収まる座標を求める。
+        float minX = area.xMin + xPadding - displayBounds.min.x * fit;
+        float maxX = Mathf.Max(minX, area.xMax - xPadding - displayBounds.max.x * fit);
+        float minY = area.yMin + bottomPadding - displayBounds.min.y * fit;
+        float maxY = Mathf.Max(minY, area.yMax - topPadding - displayBounds.max.y * fit);
         bool hasSpawnPoint = spawnPoint != null;
         Vector3 referencePosition = hasSpawnPoint
             ? commentParent.InverseTransformPoint(spawnPoint.position)
@@ -229,12 +237,12 @@ public class CommentManager : MonoBehaviour
         float x;
         if (spawnOutsideRight)
         {
-            float outsideX = area.xMax + Mathf.Max(0f, outsideRightOffset) - textBounds.min.x * fit;
+            float outsideX = canvasArea.xMax + Mathf.Max(0f, outsideRightOffset) - displayBounds.min.x * fit;
             x = hasSpawnPoint ? Mathf.Max(outsideX, referencePosition.x) : outsideX;
         }
         else
         {
-            x = hasSpawnPoint ? Mathf.Clamp(referencePosition.x, minX, maxX) : maxX;
+            x = hasSpawnPoint || !automatic ? Mathf.Clamp(referencePosition.x, minX, maxX) : maxX;
         }
 
         if (!automatic)
@@ -250,7 +258,7 @@ public class CommentManager : MonoBehaviour
             maxY = Mathf.Clamp(referencePosition.y + range, minY, maxY);
         }
 
-        float spacing = Mathf.Max(minVerticalSpacing, textBounds.size.y * fit, 1f);
+        float spacing = Mathf.Max(minVerticalSpacing, displayBounds.size.y * fit, 1f);
         int laneCount = Mathf.FloorToInt((maxY - minY) / spacing) + 1;
         int firstLane = UnityEngine.Random.Range(0, laneCount);
 
@@ -273,15 +281,73 @@ public class CommentManager : MonoBehaviour
         return false;
     }
 
-    private Bounds GetTextBounds(Comment comment)
+    private Rect GetCanvasArea()
     {
-        TMP_Text label = comment.GetComponentInChildren<TMP_Text>();
-        label.ForceMeshUpdate();
-        Bounds bounds = label.textBounds;
-        Matrix4x4 textToParent = commentParent.worldToLocalMatrix * label.transform.localToWorldMatrix;
-        Vector3 center = textToParent.MultiplyPoint3x4(bounds.center) - comment.transform.localPosition;
-        Vector3 horizontal = textToParent.MultiplyVector(Vector3.right * bounds.extents.x);
-        Vector3 vertical = textToParent.MultiplyVector(Vector3.up * bounds.extents.y);
+        Canvas canvas = commentParent.GetComponentInParent<Canvas>();
+        if (canvas == null)
+        {
+            return commentParent.rect;
+        }
+
+        RectTransform canvasRect = (RectTransform)canvas.rootCanvas.transform;
+        Rect rect = canvasRect.rect;
+        Matrix4x4 canvasToParent = commentParent.worldToLocalMatrix * canvasRect.localToWorldMatrix;
+        Bounds bounds = TransformBounds(new Bounds(rect.center, rect.size), canvasToParent);
+        return Rect.MinMaxRect(bounds.min.x, bounds.min.y, bounds.max.x, bounds.max.y);
+    }
+
+    private Bounds GetDisplayBounds(Comment comment)
+    {
+        comment.GetComponentsInChildren(false, commentGraphics);
+        Matrix4x4 worldToParent = commentParent.worldToLocalMatrix;
+        Bounds displayBounds = default;
+        bool hasBounds = false;
+
+        foreach (Graphic graphic in commentGraphics)
+        {
+            if (!graphic.isActiveAndEnabled || graphic is TMP_SubMeshUI)
+            {
+                continue;
+            }
+
+            Bounds graphicBounds;
+            if (graphic is TMP_Text label)
+            {
+                // 文字サイズに追従するレイアウトを確定してから、描画メッシュを測る。
+                LayoutRebuilder.ForceRebuildLayoutImmediate(label.rectTransform);
+                label.ForceMeshUpdate();
+                graphicBounds = label.bounds;
+            }
+            else
+            {
+                Rect rect = graphic.GetPixelAdjustedRect();
+                graphicBounds = new Bounds(rect.center, rect.size);
+            }
+
+            Matrix4x4 graphicToParent = worldToParent * graphic.transform.localToWorldMatrix;
+            Bounds parentBounds = TransformBounds(graphicBounds, graphicToParent);
+            if (hasBounds)
+            {
+                displayBounds.Encapsulate(parentBounds);
+            }
+            else
+            {
+                displayBounds = parentBounds;
+                hasBounds = true;
+            }
+        }
+
+        commentGraphics.Clear();
+        // 配置と縮尺の計算にはコメントのピボットからの相対位置を使う。
+        displayBounds.center -= hasBounds ? comment.transform.localPosition : Vector3.zero;
+        return displayBounds;
+    }
+
+    private static Bounds TransformBounds(Bounds bounds, Matrix4x4 localToParent)
+    {
+        Vector3 center = localToParent.MultiplyPoint3x4(bounds.center);
+        Vector3 horizontal = localToParent.MultiplyVector(Vector3.right * bounds.extents.x);
+        Vector3 vertical = localToParent.MultiplyVector(Vector3.up * bounds.extents.y);
         Vector3 size = 2f * new Vector3(
             Mathf.Abs(horizontal.x) + Mathf.Abs(vertical.x),
             Mathf.Abs(horizontal.y) + Mathf.Abs(vertical.y),
@@ -368,16 +434,13 @@ public class CommentManager : MonoBehaviour
             commentRect.anchoredPosition = spawnPosition;
         }
 
-        if (automatic || spawnPoint != null || spawnOutsideRight)
+        if (!TryGetSpawnPosition(comment, automatic, allowOverlapWhenFull, out Vector2 position))
         {
-            if (!TryGetSpawnPosition(comment, automatic, allowOverlapWhenFull, out Vector2 position))
-            {
-                Destroy(comment.gameObject);
-                return null;
-            }
-
-            commentRect.localPosition = new Vector3(position.x, position.y, commentRect.localPosition.z);
+            Destroy(comment.gameObject);
+            return null;
         }
+
+        commentRect.localPosition = new Vector3(position.x, position.y, commentRect.localPosition.z);
         spawnedComments.RemoveAll(previous => previous == null);
         spawnedComments.Add(comment);
         return comment;

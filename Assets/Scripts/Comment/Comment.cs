@@ -70,7 +70,7 @@ public class Comment : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragH
             superChatImage.gameObject.SetActive(true);
             superChatChatMoney.gameObject.SetActive(true);
             superChatText.gameObject.SetActive(true);
-            superChatChatMoney.text = initCommentData.money.ToString();
+            superChatChatMoney.text = initCommentData.money.ToString() + "¥";
             superChatText.text = initCommentData.Comment;
             if(initCommentData.Popularity < 1000)
             {
