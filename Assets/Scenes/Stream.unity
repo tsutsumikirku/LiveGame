@@ -1369,8 +1369,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ca75c5c12ff4c74887a738eb1421b13, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Response
-  sizeTime: 0.55
-  responseTime: 0.1
+  sizeTime: 0.2
+  responseTime: 0.05
   responseText: {fileID: 900422691}
 --- !u!114 &1559914499
 MonoBehaviour:
@@ -1653,6 +1653,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   gameTime: 180
   uIManager: {fileID: 0}
+  likeability: 0
   MaxLikeAbility: 0
 --- !u!4 &1816066926
 Transform:
