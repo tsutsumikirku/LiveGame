@@ -170,6 +170,7 @@ public class CommentManager : MonoBehaviour
         if (gameManager != null)
         {
             initialLikeability ??= gameManager.Likeability;
+            Debug.Log(data.Popularity);
             gameManager.Likeability += data.Popularity;
         }
 

@@ -14,17 +14,17 @@ public class GameManager : MonoBehaviour
         get { return likeability; }
         set
         {
-            if (likeability + value > maxLikeAbility)
+            if (value > maxLikeAbility)
             {
                 likeability = maxLikeAbility;
             }
-            else if(likeability + value < minLikeAbility)
+            else if(value < minLikeAbility)
             {
                 likeability = minLikeAbility;
             }
             else
             {
-                likeability += value;
+                likeability = value;
             }
             Debug.Log($"好感度が{likeability}に変更されました。");
         }
