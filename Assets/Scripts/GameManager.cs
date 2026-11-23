@@ -4,7 +4,7 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
     [SerializeField]private float gameTime = 180f;
-    [SerializeField, InspectorName("好感度の最大値")]
+    [SerializeField, InspectorName("好感度の最大値")] private int goalMoney; 
     private UIManager uIManager;
     private Response response;
     [SerializeField]private int likeability;
@@ -53,6 +53,8 @@ public class GameManager : MonoBehaviour
         Debug.Log($"コメントを受信しました。{commentData.Responce}");
         response.Responce(commentData.Responce);
         money += commentData.money;
+        if(money >= goalMoney)
+        uIManager.BombStop();
         uIManager.UpdateMoney(money);
     }
     [ContextMenu("GameStart")]
@@ -61,6 +63,7 @@ public class GameManager : MonoBehaviour
         likeability = 0;
         money = 0;
         uIManager.UpdateMoney(money);
+        uIManager.Init();
         FindAnyObjectByType<CommentManager>().StartComments();
         isGameRunning = true;
         currentTime = gameTime;
