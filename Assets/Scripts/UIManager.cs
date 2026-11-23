@@ -1,0 +1,58 @@
+using System.Collections;
+using TMPro;
+using UnityEngine;
+
+public class UIManager : MonoBehaviour
+{
+    [SerializeField] private TextMeshProUGUI _timerText;
+    [SerializeField] private TextMeshProUGUI _moneyText;
+    [SerializeField] private float _moneyAnimationDuration = 0.5f;
+
+    private Coroutine _moneyAnimation;
+    private int _displayedMoney;
+
+    private void Awake()
+    {
+        _displayedMoney = 0;
+        _moneyText.text = "0";
+    }
+
+    public void UpdateTimer(float time)
+    {
+        int minutes = Mathf.FloorToInt(time / 60f);
+        int seconds = Mathf.FloorToInt(time % 60f);
+        _timerText.text = $"{minutes:00}:{seconds:00}";
+    }
+
+    public void UpdateMoney(int money)
+    {
+        if (_moneyAnimation != null)
+        {
+            StopCoroutine(_moneyAnimation);
+        }
+
+        _moneyAnimation = StartCoroutine(AnimateMoney(money));
+    }
+
+    private IEnumerator AnimateMoney(int targetMoney)
+    {
+        int startMoney = _displayedMoney;
+        float elapsed = 0f;
+        float duration = Mathf.Max(0f, _moneyAnimationDuration);
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float progress = duration <= 0f ? 1f : Mathf.Clamp01(elapsed / duration);
+            progress = 1f - Mathf.Pow(1f - progress, 3f);
+
+            _displayedMoney = Mathf.RoundToInt(Mathf.Lerp(startMoney, targetMoney, progress));
+            _moneyText.text = _displayedMoney.ToString();
+            yield return null;
+        }
+
+        _displayedMoney = targetMoney;
+        _moneyText.text = targetMoney.ToString();
+        _moneyAnimation = null;
+    }
+}

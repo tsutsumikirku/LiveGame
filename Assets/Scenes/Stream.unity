@@ -588,8 +588,7 @@ MonoBehaviour:
   outsideRightOffset: 8
   commentSpeed: 280
   deleteTime: 0.25
-  autoSpawn: 1
-  currentPopularity: 0
+  autoSpawn: 0
   earlyStageDuration: 20
   topicDuration: 10
   minSpawnInterval: 0.35
@@ -1124,6 +1123,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1269434347}
+  - component: {fileID: 1269434348}
   - component: {fileID: 1269434346}
   - component: {fileID: 1269434345}
   - component: {fileID: 1269434344}
@@ -1224,6 +1224,21 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &1269434348
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1269434343}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2d15cc5c4ee7b443ae63c1080323a26, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIManager
+  _timerText: {fileID: 147081274}
+  _moneyText: {fileID: 1800532853}
+  _moneyAnimationDuration: 0.5
 --- !u!1 &1542663514
 GameObject:
   m_ObjectHideFlags: 0
@@ -1527,7 +1542,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 1000000
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: aca683c9b240dec41805aa5e13be03ad, type: 2}
   m_sharedMaterial: {fileID: -3353607962597213121, guid: aca683c9b240dec41805aa5e13be03ad, type: 2}
@@ -1557,9 +1572,9 @@ MonoBehaviour:
   m_fontSize: 95.8
   m_fontSizeBase: 95.8
   m_fontWeight: 400
-  m_enableAutoSizing: 0
+  m_enableAutoSizing: 1
   m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_fontSizeMax: 104.1
   m_fontStyle: 0
   m_HorizontalAlignment: 4
   m_VerticalAlignment: 512
@@ -1637,6 +1652,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   gameTime: 180
+  uIManager: {fileID: 0}
+  MaxLikeAbility: 0
 --- !u!4 &1816066926
 Transform:
   m_ObjectHideFlags: 0

@@ -253,7 +253,7 @@ public class CSVInpoerter : MonoBehaviour
             return null;
         }
 
-        int currentPopularity = gameManager.likeability;
+        int currentPopularity = gameManager.Likeability;
         CommentData selected = null;
         long totalWeight = 0;
         foreach (CommentData data in chatData)

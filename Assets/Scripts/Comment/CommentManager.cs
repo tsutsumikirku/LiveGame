@@ -88,7 +88,7 @@ public class CommentManager : MonoBehaviour
         GameManager gameManager = GameManager.Instance;
         if (gameManager != null)
         {
-            initialLikeability ??= gameManager.likeability;
+            initialLikeability ??= gameManager.Likeability;
         }
 
         nextCommonSpawnTime = GetNextSpawnTime(Time.time);
@@ -109,7 +109,7 @@ public class CommentManager : MonoBehaviour
         GameManager gameManager = GameManager.Instance;
         if (gameManager != null && initialLikeability.HasValue)
         {
-            gameManager.likeability = initialLikeability.Value;
+            gameManager.Likeability = initialLikeability.Value;
         }
 
         initialLikeability = null;
@@ -169,8 +169,8 @@ public class CommentManager : MonoBehaviour
         GameManager gameManager = GameManager.Instance;
         if (gameManager != null)
         {
-            initialLikeability ??= gameManager.likeability;
-            gameManager.likeability += data.Popularity;
+            initialLikeability ??= gameManager.Likeability;
+            gameManager.Likeability += data.Popularity;
         }
 
         CSVInpoerter importer = CSVInpoerter.Instance;
