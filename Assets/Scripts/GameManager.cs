@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -5,6 +8,7 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance;
     [SerializeField]private float gameTime = 180f;
     [SerializeField, InspectorName("好感度の最大値")] private int goalMoney; 
+    private List<int> moneyRanking;
     private UIManager uIManager;
     private Response response;
     [SerializeField]private int likeability;
@@ -36,6 +40,7 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
+        moneyRanking = new List<int>();
         uIManager = FindAnyObjectByType<UIManager>();
         response = FindAnyObjectByType<Response>();
         if (Instance == null)
@@ -51,7 +56,24 @@ public class GameManager : MonoBehaviour
     public void GetComment(CommentData commentData)
     {
         Debug.Log($"コメントを受信しました。{commentData.Responce}");
-        response.Responce(commentData.Responce);
+        switch (commentData.emotion)
+        {
+            case "普通":
+                response.Responce(commentData.Responce, 0);
+                break;
+            case "笑顔":
+                response.Responce(commentData.Responce, 1);
+                break;
+            case "泣き":
+                response.Responce(commentData.Responce, 2);
+                break;
+            case "驚き":
+                response.Responce(commentData.Responce, 3);
+                break;
+            case "困惑":
+                response.Responce(commentData.Responce, 4);
+                break;
+        }
         money += commentData.money;
         if(money >= goalMoney)
         uIManager.BombStop();
@@ -68,11 +90,19 @@ public class GameManager : MonoBehaviour
         isGameRunning = true;
         currentTime = gameTime;
     }
-    public void GameEnd()
+    public async UniTask GameEnd()
     {
+        moneyRanking.Add(money);
+        moneyRanking.Sort((a, b) => b.CompareTo(a));
         isGameRunning = false;
         FindAnyObjectByType<CommentManager>().EndComments();
+        await FindAnyObjectByType<UIManager>().GameEnd(() =>
+        {
+            Result result = FindAnyObjectByType<Result>();
+            result.Init(money, moneyRanking.ToArray());
+        });
     }
+
     private void Update()
     {
         if (isGameRunning)
@@ -81,10 +111,9 @@ public class GameManager : MonoBehaviour
             if (currentTime <= 0)
             {
                 currentTime = 0;
-                GameEnd();
+                GameEnd().Forget();
             }
         }
         uIManager.UpdateTimer(currentTime);
     }
-
 }

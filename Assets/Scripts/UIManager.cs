@@ -1,9 +1,11 @@
 using System.Collections;
+using DG.Tweening;
 using TMPro;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 using UnityEngine.UI;
-using UnityEngine.Animations;
-using Unity.VisualScripting;
+using System;
+
 
 public class UIManager : MonoBehaviour
 {
@@ -13,6 +15,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Sprite _timerOnImage;
     [SerializeField] private Sprite _timerOffImage;
     [SerializeField] private float _moneyAnimationDuration = 0.5f;
+    [SerializeField] private Image _bombEffect;
 
     private bool isBombActive;
     private Coroutine _moneyAnimation;
@@ -24,6 +27,7 @@ public class UIManager : MonoBehaviour
         _displayedMoney = 0;
         _moneyText.text = "0";
         animator = _timerImage.gameObject.GetComponent<Animator>();
+        _bombEffect.gameObject.SetActive(false);
     }
     public void Init()
     {
@@ -32,6 +36,7 @@ public class UIManager : MonoBehaviour
         isBombActive = true;
         _timerImage.sprite = _timerOnImage;
         animator.SetBool("Bomb",isBombActive);
+        _bombEffect.gameObject.SetActive(false);
     }
     public void BombStop()
     {
@@ -48,6 +53,38 @@ public class UIManager : MonoBehaviour
     }
     void Update()
     {
+    }
+
+    public async UniTask GameEnd(Action action)
+    {
+        _bombEffect.gameObject.SetActive(true);
+        _bombEffect.transform.localScale = Vector3.zero;
+
+        try
+        {
+            Tween expandTween = _bombEffect.transform
+                .DOScale(Vector3.one,1f)
+                .SetEase(Ease.OutBack);
+            await AwaitTween(expandTween);
+
+            action?.Invoke();
+        }
+        finally
+        {
+            Tween shrinkTween = _bombEffect.transform
+                .DOScale(Vector3.zero, 1f)
+                .SetEase(Ease.InBack);
+            await AwaitTween(shrinkTween);
+
+            _bombEffect.gameObject.SetActive(false);
+        }
+    }
+
+    private async UniTask AwaitTween(Tween tween)
+    {
+        var source = new UniTaskCompletionSource();
+        tween.OnComplete(() => source.TrySetResult());
+        await source.Task;
     }
 
     public void UpdateMoney(int money)
